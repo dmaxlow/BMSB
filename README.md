@@ -14,5 +14,6 @@ Postdiapausesurvall are survival data that considers survival at the date of the
 
 AggregatedatabySE.txt shows analysis os survival by climate and cold shock-temperature.
 It includes functions for aggeregating data using the gplots package.
+The code file contains all potential analyses.
 
 All data analyses occured in R Development Core Team 3.3.1
