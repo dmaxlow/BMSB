@@ -1,0 +1,559 @@
+###OBJECTIVE
+
+###COMPARE SURVIVING ADULTS AT END OF DIAPAUSE FROM CA/WA/OR
+
+#Pre-data work
+# Summed number of dead and living BMSB from pooled (M/F) data sheet
+# Final living/dead was calculated at conclusion of diapause (Day 80 - CA, Day 105 - OR, Day 119 - WA)
+####This means that mortality clock stops at earlier data for CA and OR compared to WA
+
+
+#Each sample (population) is a cardboard box with 10 bmsb
+
+pd <- read.table("postdiapausesurv.txt", header=T, sep="\t")
+
+#convert coldtemp to a factor and arrange into levels
+Coldtemp1 <- factor(pd$Coldtemp, levels=c("-6", "-4", "-2", "0", "2", "control")) 
+attach(pd)
+
+###Inspect data
+tapply(Living, Climate, mean)
+
+tapply(Living, Coldtempa, mean)
+
+tapply(Living, Climate:Coldtemp1, mean)
+
+par(mfrow=c(2,2))
+
+barplot(tapply(Living, Climate, mean))
+
+barplot(tapply(Living, Coldtemp1, mean))
+
+barplot(tapply(Living, Climate:Coldtemp1, mean), las=2)
+
+plot(Living)
+#Looks like buckshot on figure - potentially normal distribution
+
+hist(Living)
+#Looks pretty good. some skew with feewe from 8-10.
+
+#Do climate and cold shock temps affect survival at end of diapause?
+b = aov(Living~Climate*Coldtemp1)
+
+par(mfrow=c(2,2))
+plot(b)
+#The ANOVA looks remarkably robust
+#Normal distribution with evenly distributed means
+
+summary(b)
+                   Df Sum Sq Mean Sq F value   Pr(>F)    
+Climate             2  111.4   55.72  16.652 2.97e-07 ***
+Coldtemp1           5  185.3   37.06  11.075 4.40e-09 ***
+Climate:Coldtemp1  10   48.4    4.84   1.447    0.165    
+Residuals         149  498.6    3.35     
+
+#Yes significant effects
+
+b1 = aov(Living~Climate+Coldtemp1)
+summary(b1)
+             Df Sum Sq Mean Sq F value   Pr(>F)    
+Climate       2  111.4   55.72   16.20 3.96e-07 ***
+Coldtemp1     5  185.3   37.06   10.77 6.21e-09 ***
+Residuals   159  547.0    3.44    
+
+TukeyHSD(b1)
+            diff       lwr         upr     p adj
+OR-CA -0.8041467 -1.633554  0.02526083 0.0595588
+WA-CA -2.0000000 -2.836780 -1.16321979 0.0000002
+WA-OR -1.1958533 -2.025261 -0.36644571 0.0023533
+
+#Post-diapause survival is different for each climate, though barely between CA and OR
+
+                  diff        lwr       upr     p adj
+#-4--6       2.81147439  1.3682912 4.2546576 0.0000012
+#-2--6       2.59718868  1.1540054 4.0403719 0.0000093
+#0--6        2.56846915  1.1252859 4.0116524 0.0000120
+#2--6        3.28275487  1.8395716 4.7259381 0.0000000
+#control--6  2.66861725  1.2254340 4.1118005 0.0000048
+
+#Diapause survival is lowest at -6 compared to all other temps
+
+
+#####Do climate and cold shock temps affect survival at end of diapause?
+###USING DATA from end of trial (after all bugs had been counted for an equivalent amount of time
+
+   
+pda <- read.table("postdiapauseallsurv.txt", header=T, sep="\t")
+
+#convert coldtemp to a factor and arrange into levels
+Coldtemp1 <- factor(pda$Coldtemp, levels=c("-6", "-4", "-2", "0", "2", "control")) 
+attach(pda)
+
+###Inspect data
+tapply(Living, Climate, mean)
+
+tapply(Living, Coldtemp1, mean)
+
+tapply(Living, Climate:Coldtemp1, mean)
+
+par(mfrow=c(2,2))
+
+barplot(tapply(Living, Climate, mean))
+
+barplot(tapply(Living, Coldtemp1, mean))
+
+barplot(tapply(Living, Climate:Coldtemp1, mean), las=2)
+
+#slightly higher survival in Ca than OR or WA, but not as steep as previous
+# -6 still with lower survival. rest of climates similar.
+
+plot(Living)
+#Looks like buckshot on figure - potentially normal distribution
+
+hist(Living)
+#Skewed left
+
+#Do climate and cold shock temps affect survival at end of diapause?
+c = aov(Living~Climate*Coldtemp1)
+
+par(mfrow=c(2,2))
+plot(c)
+#The ANOVA looks remarkably robust
+#mostly Normal distribution with evenly distributed means
+# but inverse fan
+
+#check boxcox
+# https://www.isixsigma.com/tools-templates/normality/making-data-normal-using-box-cox-power-transformation/
+library(MASS)
+boxcox(Living+0.01~Climate+Coldtemp1)
+#Yes a normal distribution is appropriate
+
+summary(c)
+                   Df Sum Sq Mean Sq F value   Pr(>F)    
+Climate             2   19.2    9.62   2.662   0.0731 .  
+Coldtemp1           5  168.5   33.70   9.327 9.51e-08 ***
+Climate:Coldtemp1  10   44.6    4.46   1.235   0.2735    
+Residuals         149  538.3    3.61    
+#Yes significant effects only for climate
+
+c1 = aov(Living~Climate+Coldtemp1)
+summary(c1)
+             Df Sum Sq Mean Sq F value   Pr(>F)    
+Climate       2   19.2    9.62   2.624   0.0757 .  
+Coldtemp1     5  168.5   33.70   9.191 1.06e-07 ***
+Residuals   159  582.9    3.67         
+
+TukeyHSD(c1)
+
+                       diff       lwr        upr     p adj
+Wenatchee-Cali   -0.8363636 -1.700193 0.02746614 0.0600121
+
+##############################################
+###Create figures with SE
+##############################################
+
+#By climate for Mar 3 end
+attach(pda)
+library(gplots)
+ par(mfrow=c(1,1))
+
+myDatad <- aggregate(Living, by = list(Loc = Climate), 
+	FUN = function(x) c(mean = mean(x), sd = sd(x), n = length(x)))
+
+#convert from matrix to vector
+myDatad <- do.call(data.frame, myDatad)
+myDatad$se <- myDatad$x.sd / sqrt(myDatad$x.n)
+
+etd <- tapply(Living, Coldtemp1, mean)
+#calculate conf ints
+scalesd=tapply(Living, Coldtemp1,sd)
+upper=etd+myDatad$se
+lower=etd-myDatad$se
+
+bpc<- barplot2(etd, beside=TRUE,plot.ci=TRUE, ci.u=upper, ci.l=lower, ylab="Living",xlab="Cold shock temperature",
+main="Post-diapause survival", cex.lab=1.2, cex.axis=1.2, cex.main=1.1, ylim=c(0,6), cex=1.2)
+
+tiff('Fig1coldshock.tif', res=300, width=6, height=6, units="in")
+barplot2(etd, beside=TRUE,plot.ci=TRUE, ci.u=upper, ci.l=lower, ylab="Living",xlab="Cold shock temperature",
+main="Post-diapause survival", cex.lab=1.2, cex.axis=1.2, cex.main=1.1, ylim=c(0,6), cex=1.2)
+dev.off()
+
+########
+###For individual diapause end
+attach(pd)
+myDatad <- aggregate(Living, by = list(Loc = Coldtemp1), 
+	FUN = function(x) c(mean = mean(x), sd = sd(x), n = length(x)))
+
+#convert from matrix to vector
+myDatad <- do.call(data.frame, myDatad)
+myDatad$se <- myDatad$x.sd / sqrt(myDatad$x.n)
+
+etd <- tapply(Living, Coldtemp1, mean)
+#calculate conf ints
+scalesd=tapply(Living, Coldtemp1,sd)
+upper=etd+myDatad$se
+lower=etd-myDatad$se
+
+bpc<- barplot2(etd, beside=TRUE,plot.ci=TRUE, ci.u=upper, ci.l=lower, ylab="Living",xlab="Cold temp",
+main="Cold shock survival @ end of each diapause", cex.lab=1.2, cex.axis=1.2, cex.main=1.1, ylim=c(0,6))
+
+###UPDATED for RESUBMIT 
+
+bpe<- barplot2(etd, beside=TRUE,plot.ci=TRUE, ci.u=upper, ci.l=lower, ylab="Mean ± (SE) H. halys survivors per box",xlab="Cold shock temperature (ºC)",
+main="", cex.lab=1.2, cex.axis=1.2, cex.main=1.1, ylim=c(0,6))
+tiff('fig1rev.tif', res=300, width=6, height=6, units="in")
+dev.off()
+
+
+###
+
+#######FIGURES for climate
+myDatad <- aggregate(Living, by = list(Loc = Climate), 
+	FUN = function(x) c(mean = mean(x), sd = sd(x), n = length(x)))
+
+#convert from matrix to vector
+myDatad <- do.call(data.frame, myDatad)
+myDatad$se <- myDatad$x.sd / sqrt(myDatad$x.n)
+
+etd <- tapply(Living, Climate, mean)
+#calculate conf ints
+scalesd=tapply(Living, Climate,sd)
+upper=etd+myDatad$se
+lower=etd-myDatad$se
+
+bpc<- barplot2(etd, beside=TRUE,plot.ci=TRUE, ci.u=upper, ci.l=lower, ylab="Living",xlab="Climate",
+main="Climate survival @ end of each diapause", cex.lab=1.2, cex.axis=1.2, cex.main=1.1, ylim=c(0,6))
+
+##For total end on March 3
+attach(pda)
+myDatad <- aggregate(Living, by = list(Loc = Climate), 
+	FUN = function(x) c(mean = mean(x), sd = sd(x), n = length(x)))
+
+#convert from matrix to vector
+myDatad <- do.call(data.frame, myDatad)
+myDatad$se <- myDatad$x.sd / sqrt(myDatad$x.n)
+
+etd <- tapply(Living, Climate, mean)
+#calculate conf ints
+scalesd=tapply(Living, Climate,sd)
+upper=etd+myDatad$se
+lower=etd-myDatad$se
+
+bpc<- barplot2(etd, beside=TRUE,plot.ci=TRUE, ci.u=upper, ci.l=lower, ylab="Living",xlab="Climate",
+main="Climate survival @ end of all diapause", cex.lab=1.2, cex.axis=1.2, cex.main=1.1, ylim=c(0,6))
+
+
+##################################################################
+#####COMPARE Survival BY SEX (MALE VS FEMALE)
+##################################################################
+
+####FEMALE
+# for Mar 3 full diapause
+
+fd <- read.table("femalefullsurv.txt", header=T, sep="\t")
+
+
+#convert coldtemp to a factor and arrange into levels
+Coldtemp1 <- factor(fd$Cold.shock.temp, levels=c("-6", "-4", "-2", "0", "2", "control")) 
+attach(fd)
+
+###Inspect data
+tapply(Living, Climate, mean)
+
+tapply(Living, Coldtemp1, mean)
+
+tapply(Living, Climate:Coldtemp1, mean)
+
+# differences arent as extreme for females. 
+
+par(mfrow=c(2,2))
+
+barplot(tapply(Living, Climate, mean))
+
+barplot(tapply(Living, Coldtemp1, mean))
+
+barplot(tapply(Living, Climate:Coldtemp1, mean), las=2)
+
+plot(Living)
+#Looks like buckshot on figure - potentially normal distribution
+
+hist(Living)
+#Looks pretty good. some skew with feewe from 8-10.
+
+#Do climate and cold shock temps affect survival at end of diapause?
+b = aov(Living~Climate*Coldtemp1)
+
+par(mfrow=c(2,2))
+plot(b)
+#The ANOVA looks  robust
+#Normal distribution with evenly distributed means
+
+summary(b)
+                   Df Sum Sq Mean Sq F value Pr(>F)  
+Climate             2   4.40   2.201   1.242 0.2919  
+Coldtemp1           5  21.60   4.319   2.436 0.0373 *
+Climate:Coldtemp1  10  15.23   1.523   0.859 0.5732  
+Residuals         149 264.21   1.773       
+
+#only a significant cold shock effect
+TukeyHSD(b1)
+
+                   diff         lwr       upr     p adj
+-4--6       1.051799954  0.01481187 2.0887880 0.0446993
+2--6        1.022909547 -0.01407854 2.0598976 0.0555267
+
+# -6 has lower survival than 4 or 2
+#BUT, the effect sizes are pretty small. 1.5 vs 2.2 living females
+
+
+####For each diapause
+fda <- read.table("femaleeachsurv.txt", header=T, sep="\t")
+
+
+#convert coldtemp to a factor and arrange into levels
+Coldtemp1 <- factor(fda$Coldtemp, levels=c("-6", "-4", "-2", "0", "2", "control")) 
+attach(fda)
+
+###Inspect data
+tapply(Living, Climate, mean)
+
+tapply(Living, Coldtemp1, mean)
+
+tapply(Living, Climate:Coldtemp1, mean)
+
+# differences arent as extreme for females. 
+
+par(mfrow=c(2,2))
+
+barplot(tapply(Living, Climate, mean))
+
+barplot(tapply(Living, Coldtemp1, mean))
+
+barplot(tapply(Living, Climate:Coldtemp1, mean), las=2)
+
+##Another type of interaction plot
+barplot(tapply(Living, list(Climate, Coldtemp1), mean), beside=T, col=c("orange", "yellow", "black"), ylab="BMSB alive")
+legend(locator(1), labs, fill=c("orange", "yellow", "black"))
+
+
+plot(Living)
+#Looks like buckshot on figure - potentially normal distribution
+
+hist(Living)
+#skewed very few with 5+
+
+#Do climate and cold shock temps affect survival at end of diapause?
+b4 = aov(Living~Climate*Coldtemp1, data=fda)
+
+par(mfrow=c(2,2))
+plot(b4)
+# a little bit of skew towards 10, but variance looks equal
+
+                   Df Sum Sq Mean Sq F value   Pr(>F)    
+Climate             2   41.1  20.541   8.791 0.000246 ***
+Coldtemp1           5   20.5   4.094   1.752 0.126242    
+Climate:Coldtemp1  10   14.7   1.470   0.629 0.787191    
+Residuals         149  348.2   2.337     
+    
+
+TukeyHSD(b)
+$Climate
+                       diff       lwr        upr     p adj
+Oregon-Cali      -0.3240829 -1.008073  0.3599069 0.5022491
+Wenatchee-Cali   -1.1818182 -1.871888 -0.4917483 0.0002372
+Wenatchee-Oregon -0.8577352 -1.541725 -0.1737454 0.0097056
+
+#Cali and OR with higher survivorship than WA
+# - 6 with a trend towards greater mortality
+
+#####MALE
+#For full diapause
+md <- read.table("malefullsurv.txt", header=T, sep="\t")
+
+
+#convert coldtemp to a factor and arrange into levels
+Coldtemp1 <- factor(md$Cold.shock.temp, levels=c("-6", "-4", "-2", "0", "2", "control")) 
+attach(md)
+
+###Inspect data
+tapply(Living, Climate, mean)
+
+tapply(Living, Coldtemp1, mean)
+
+tapply(Living, Climate:Coldtemp1, mean)
+
+# differences arent as extreme for females. 
+
+par(mfrow=c(2,2))
+
+barplot(tapply(Living, Climate, mean))
+
+barplot(tapply(Living, Coldtemp1, mean))
+
+barplot(tapply(Living, Climate:Coldtemp1, mean), las=2)
+
+plot(Living)
+#Looks like buckshot on figure - potentially normal distribution
+
+hist(Living)
+#Looks pretty good. some skew with few above 2
+
+#Do climate and cold shock temps affect survival at end of diapause?
+b2 = aov(Living~Climate*Coldtemp1, data=md)
+
+par(mfrow=c(2,2))
+plot(b)
+#qq plot is good
+# variance is somewhat equally distributed
+shapiro.test(Living)
+# P = 1<e-9
+# This is said in Royston (1995) to be adequate for p.value < 0.1
+
+summary(b2)
+                   Df Sum Sq Mean Sq F value   Pr(>F)    
+Climate             2   4.87   2.436   1.762    0.175    
+Coldtemp1           5  74.93  14.986  10.843 6.58e-09 ***
+Climate:Coldtemp1  10  20.17   2.017   1.459    0.160    
+Residuals         149 205.94   1.382      
+
+# -6 with far lower survival than other temps
+
+
+###For each diapause
+mda <- read.table("maleeachsurv.txt", header=T, sep="\t")
+
+
+#convert coldtemp to a factor and arrange into levels
+Coldtemp2 <- factor(mda$Cold.shock.temp, levels=c("-6", "-4", "-2", "0", "2", "control")) 
+attach(mda)
+
+###Inspect data
+tapply(Living, Climate, mean)
+
+tapply(Living, Coldtemp2, mean)
+
+tapply(Living, Climate:Coldtemp2, mean)
+
+# differences arent as extreme for females. 
+
+par(mfrow=c(2,2))
+
+barplot(tapply(Living, Climate, mean))
+
+barplot(tapply(Living, Coldtemp2, mean))
+
+barplot(tapply(Living, Climate:Coldtemp2, mean), las=2)
+
+plot(Living)
+#Looks like buckshot on figure - potentially normal distribution
+
+hist(Living)
+#Looks pretty good. some skew with few above 2
+
+#Do climate and cold shock temps affect survival at end of diapause?
+b = aov(Living~Climate*Coldtemp2)
+
+par(mfrow=c(2,2))
+plot(b)
+#qq plot is good
+# variance is somewhat equally distributed
+
+# This is said in Royston (1995) to be adequate for p.value < 0.1
+
+summary(b)
+                   Df Sum Sq Mean Sq F value   Pr(>F)    
+Climate             2  22.54  11.269   8.738 0.000258 ***
+Coldtemp2           5  91.78  18.356  14.233 2.22e-11 ***
+Climate:Coldtemp2  10  23.87   2.387   1.851 0.056522 .  
+Residuals         149 192.17   1.290  
+
+TukeyHSD(b)
+Wenatchee-Cali   -0.8909091 -1.4035880 -0.3782302 0.0001886
+Wenatchee-Oregon -0.5830941 -1.0912559 -0.0749323 0.0200685
+
+                 diff        lwr       upr     p adj
+-4--6       1.88164350  0.9972669 2.7660201 0.0000001
+-2--6       1.81021493  0.9258383 2.6945916 0.0000003
+0--6        1.94207868  1.0577021 2.8264553 0.0000000
+2--6        2.29532543  1.4109488 3.1797021 0.0000000
+control--6  1.91735779  1.0329812 2.8017344 0.0000001
+
+#differences in interaction plot are from each climate to the -6 of another
+
+#INTERACTION plot
+par(mfrow=c(1,1))
+interaction.plot(Coldtemp2, Climate, Living)
+
+#survival at 0, 2, and control is lowest in Wenatchee compared to other groups
+
+
+
+
+##################################
+##COMPARE M vs F in same test
+
+
+mfa <- read.table("gendereachsurv.txt", header=T, sep="\t")
+
+
+#convert coldtemp to a factor and arrange into levels
+Coldtemp2 <- factor(mfa$Cold.shock.temp, levels=c("-6", "-4", "-2", "0", "2", "control")) 
+attach(mfa)
+
+mod = aov(Living~Coldtemp2*Sex)
+#some skew at tail
+               Df Sum Sq Mean Sq F value   Pr(>F)    
+Coldtemp2       5   89.7   17.94  10.608 1.90e-09 ***
+Sex             1   46.0   46.04  27.219 3.26e-07 ***
+Coldtemp2:Sex   5   17.5    3.51   2.073   0.0684 .  
+Residuals     322  544.6    1.69        
+
+barplot(tapply(Living, Sex, mean))
+#on average only 2 males for every 2.5 females survive to the end of diapause. 
+tapply(Living, Coldtemp2:Sex, mean)
+
+barplot(tapply(Living, list(Coldtemp2, Sex), mean), beside=T, col=c("orange", "grey1", "grey2", "grey3", "black", "green"), ylab="BMSB alive")
+legend(locator(1), labs, fill=c("orange", "grey1", "grey2", "grey3", "black", "green"))
+
+labs = 
+barplot(tapply(Living, list(Sex:Coldtemp2), mean), beside=T, col=c("orange", "black"), ylab="BMSB alive")
+legend(locator(1), labs, fill=c("orange", "black"))
+
+
+library(ggplot2)
+library(Rmisc)
+
+sum = summarySE(mfa, measurevar='Living', groupvars=c("Sex", "Coldtemp2", "Climate"))
+
+
+#Just sex and coldtemp
+sumt = summarySE(mfa, measurevar='Living', groupvars=c("Sex", "Coldtemp2"))
+
+ggplot(sumt, aes(x = Coldtemp2, y = Living, fill =Sex, ymax = Living+se) + geom_bar(stat ="identity", position= "dodge", width = 0.7) +
+geom_bar(stat="identity", position = "dodge", colour="black"))
+# fail
+
+ggplot(data=mfa, aes(x=Living, y=Coldtemp2)+geom_point())
+
+p<-ggplot(data=mfa, aes(y=Living, x=Sex, fill=Coldtemp2)) +
+  geom_bar(stat="identity", position="dodge")
+
+c<-ggplot(data=mfa, aes(y=Living, x=Sex, fill=Climate))+
+  geom_bar(stat="identity", position="dodge")
+
+mfa$Sex<-as.factor(df2$dose)
+ggplot(data=df2, aes(x=dose, y=len, fill=supp)) +
+  geom_bar(stat="identity", position=position_dodge())+
+  scale_fill_brewer(palette="Paired")+
+  theme_minimal()
+
+
+#This works but I want the reverse
+
+p=ggplot(dat2, aes(x = Transmission, y = mean, fill = VS))+
+  geom_bar(stat='identity', position=dodge)+
+  geom_errorbar(limits, position=dodge, width=0.25)+
+  apatheme+
+  ylab('Mean MPG')+
+  scale_fill_grey()
+p
