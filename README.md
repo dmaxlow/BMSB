@@ -16,4 +16,4 @@ AggregatedatabySE.txt shows analysis os survival by climate and cold shock-tempe
 It includes functions for aggeregating data using the gplots package.
 The code file contains all potential analyses.
 
-All data analyses occured in R Development Core Team 3.3.1
+All data analyses performed in R Development Core Team 3.3.1
